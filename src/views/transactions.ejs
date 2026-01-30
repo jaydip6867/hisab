@@ -1,0 +1,306 @@
+<%- include('partials/header', { title, active: 'transactions' }) %>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Transactions</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#txnModal">Add Transaction</button>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <select id="filterType" class="form-select">
+        <option value="">All Types</option>
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input id="filterMonth" type="month" class="form-control" />
+    </div>
+    <div class="col-md-3">
+      <select id="filterFirm" class="form-select">
+        <option value="">All Firms</option>
+        <option value="CDMI">CDMI</option>
+        <option value="Jaydip">Jaydip</option>
+        <option value="Mishal">Mishal</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select id="filterAccount" class="form-select">
+        <option value="">All Accounts</option>
+        <option value="cash">Cash</option>
+        <option value="bank">Bank</option>
+      </select>
+    </div>
+  </div>
+
+
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Transactions</h3>
+      <div class="actions">
+        <!-- <button class="btn btn-soft me-2" id="exportBtn" type="button">Export</button> -->
+        <!-- <button class="btn btn-primary-rounded" type="button" data-bs-toggle="modal"
+          data-bs-target="#txnModal">Add</button> -->
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table align-middle" id="txTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th class="text-end">Amount</th>
+            <th>Particular</th>
+            <th>Firm</th>
+            <th>Account</th>
+            <th style="width: 140px;">Actions</th>
+            <th>Added By</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <div id="tableTotals">
+        <strong>Income:</strong> <span id="sumIncome">0.00</span>
+        &nbsp;•&nbsp;
+        <strong>Expense:</strong> <span id="sumExpense">0.00</span>
+        &nbsp;•&nbsp;
+        <strong>Balance:</strong> <span id="sumBalance">0.00</span>
+      </div>
+      <div class="pagination-rounded">
+        <!-- Optional: wire pagination later -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="txnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="txnForm">
+        <div class="modal-header">
+          <h5 class="modal-title">Transaction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="txnId" />
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnType" id="txnTypeIncome" value="income" required>
+                <label class="form-check-label" for="txnTypeIncome">Income</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnType" id="txnTypeExpense" value="expense"
+                  required>
+                <label class="form-check-label" for="txnTypeExpense">Expense</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Amount</label>
+            <input type="number" class="form-control" id="txnAmount" min="0.01" step="0.01" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-control" id="txnDate" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Particular</label>
+            <input class="form-control" id="txnNote" required />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Firm</label>
+            <div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnFirm" id="firmCDMI" value="CDMI" required>
+                <label class="form-check-label" for="firmCDMI">CDMI</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnFirm" id="firmJaydip" value="Jaydip" required>
+                <label class="form-check-label" for="firmJaydip">Jaydip</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnFirm" id="firmMishal" value="Mishal" required>
+                <label class="form-check-label" for="firmMishal">Mishal</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Account</label>
+            <div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnAccount" id="accCash" value="cash" required>
+                <label class="form-check-label" for="accCash">Cash</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="txnAccount" id="accBank" value="bank" required>
+                <label class="form-check-label" for="accBank">Bank</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('exportBtn').addEventListener('click', exportTx);
+    function csvEscape(val) {
+      if (val === null || val === undefined) return '';
+      const s = String(val).replace(/"/g, '""');
+      return '"' + s + '"';
+    }
+
+    async function exportTx() {
+      const url = new URL(apiTx, window.location.origin);
+      if (filterType.value) url.searchParams.set('type', filterType.value);
+      if (filterMonth.value) url.searchParams.set('month', filterMonth.value);
+      if (filterFirm.value) url.searchParams.set('firm', filterFirm.value);
+      if (filterAccount.value) url.searchParams.set('account', filterAccount.value);
+      url.searchParams.set('page', '1');
+      url.searchParams.set('limit', '10000'); // export up to 10k rows
+
+      const res = await fetch(url);
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : (data.items || []);
+
+      const header = ['Date', 'Type', 'Amount', 'Particular', 'Firm', 'Account', 'Added By'];
+      const rows = items.map(t => [
+        t.date ? new Date(t.date).toLocaleDateString() : '',
+        t.type || '',
+        Number(t.amount || 0).toFixed(2),
+        t.note || '',
+        t.firm || '',
+        t.account || '',
+        (t.createdBy && (t.createdBy.email || t.createdBy.name)) || ''
+      ]);
+
+      let csv = '\uFEFF' + header.map(csvEscape).join(',') + '\n'
+        + rows.map(r => r.map(csvEscape).join(',')).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.download = `transactions_${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  </script>
+
+  <script>
+    const apiTx = '/api/transactions';
+    const tbody = document.querySelector('#txTable tbody');
+    const filterType = document.getElementById('filterType');
+    const filterMonth = document.getElementById('filterMonth');
+    const filterFirm = document.getElementById('filterFirm');
+    const filterAccount = document.getElementById('filterAccount');
+    async function fetchTx() {
+      const url = new URL(apiTx, window.location.origin);
+      if (filterType.value) url.searchParams.set('type', filterType.value);
+      if (filterMonth.value) url.searchParams.set('month', filterMonth.value);
+      if (filterFirm.value) url.searchParams.set('firm', filterFirm.value);
+      if (filterAccount.value) url.searchParams.set('account', filterAccount.value);
+      const res = await fetch(url);
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : (data.items || []);
+      // Compute totals over the currently displayed items
+      const incomeTotal = items.filter(x => x.type === 'income')
+        .reduce((s, x) => s + Number(x.amount || 0), 0);
+      const expenseTotal = items.filter(x => x.type === 'expense')
+        .reduce((s, x) => s + Number(x.amount || 0), 0);
+      const balance = incomeTotal - expenseTotal;
+
+      document.getElementById('sumIncome').textContent = "₹ " + incomeTotal.toFixed(2);
+      document.getElementById('sumExpense').textContent = "₹ " + expenseTotal.toFixed(2);
+      document.getElementById('sumBalance').textContent = "₹ " + balance.toFixed(2);
+      tbody.innerHTML = items.map(t => `
+  <tr>
+    <td>${t.date ? new Date(t.date).toLocaleDateString() : ''}</td>
+    <td><span class="pill ${t.type === 'income' ? 'pill-success' : 'pill-danger'}">${t.type}</span></td>
+    <td class="text-end">₹ ${Number(t.amount).toFixed(2)}</td>
+    <td>${t.note || ''}</td>
+    <td>${t.firm || ''}</td>
+    <td>${t.account || ''}</td>
+    <td>
+      <button class="btn btn-sm btn-outline-primary me-2"
+        onclick="editTx('${t._id}', '${t.type}', ${t.amount}, '${t.date || ''}', '${encodeURIComponent(t.note || '')}', '${t.firm || ''}', '${t.account || ''}')">Edit</button>
+      <button class="btn btn-sm btn-outline-danger" onclick="deleteTx('${t._id}')">Delete</button>
+    </td>
+    <td class="text-muted small">${t.createdBy?.email || t.createdBy?.name || ''}</td>
+  </tr>
+`).join('');
+    }
+
+    function setRadio(name, value) {
+      const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+      if (el) el.checked = true;
+    }
+    function getRadio(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : null;
+    }
+    function editTx(id, type, amount, date, note, firm, account) {
+      document.getElementById('txnId').value = id;
+      setRadio('txnType', type);
+      document.getElementById('txnAmount').value = amount;
+      document.getElementById('txnDate').value = date ? new Date(date).toISOString().slice(0, 10) : '';
+      document.getElementById('txnNote').value = decodeURIComponent(note);
+      setRadio('txnFirm', firm);
+      setRadio('txnAccount', account);
+      new bootstrap.Modal(document.getElementById('txnModal')).show();
+    }
+
+    async function deleteTx(id) {
+      if (!confirm('Delete this transaction?')) return;
+      const res = await fetch(`${apiTx}/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchTx(); else alert('Failed to delete');
+    }
+
+    document.getElementById('txnForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('txnId').value;
+      const payload = {
+        type: getRadio('txnType'),
+        amount: parseFloat(document.getElementById('txnAmount').value),
+        date: document.getElementById('txnDate').value,
+        note: document.getElementById('txnNote').value,
+        firm: getRadio('txnFirm'),
+        account: getRadio('txnAccount')
+      };
+      const res = await fetch(id ? `${apiTx}/${id}` : apiTx, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        document.getElementById('txnForm').reset();
+        document.getElementById('txnId').value = '';
+        bootstrap.Modal.getInstance(document.getElementById('txnModal')).hide();
+        fetchTx();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Validation error');
+      }
+    });
+
+    filterType.addEventListener('change', fetchTx);
+    filterMonth.addEventListener('change', fetchTx);
+    filterFirm.addEventListener('change', fetchTx);
+    filterAccount.addEventListener('change', fetchTx);
+    fetchTx();
+  </script>
+  <%- include('partials/footer') %>

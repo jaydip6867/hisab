@@ -1,0 +1,141 @@
+<%- include('partials/header', { title, active: 'dashboard' }) %>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Income</div>
+                            <div class="h4 mb-0" id="dIncome">₹ 0.00</div>
+                        </div>
+                        <span class="pill pill-success">↑</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Expense</div>
+                            <div class="h4 mb-0" id="dExpense">₹ 0.00</div>
+                        </div>
+                        <span class="pill pill-danger">↓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">Balance</div>
+                            <div class="h4 mb-0" id="dBalance">₹ 0.00</div>
+                        </div>
+                        <!-- <span class="badge bg-secondary">₹</span> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="table-card h-100 d-flex flex-column">
+                <div class="table-header">
+                    <h3>Monthly Trend</h3>
+                </div>
+                <div class="p-3 flex-grow-1 d-flex align-items-center">
+                    <canvas id="monthlyChart" height="120" class="w-100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="table-card h-100 d-flex flex-column">
+                <div class="table-header">
+                    <h3>Income vs Expense</h3>
+                </div>
+                <div class="p-3 flex-grow-1 d-flex align-items-center">
+                    <canvas id="pieChart" height="120" class="w-100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        async function loadSummary() {
+            const res = await fetch('/api/transactions/summary');
+            const data = await res.json();
+
+            const incomeTotal = Number(data.incomeTotal || 0);
+            const expenseTotal = Number(data.expenseTotal || 0);
+            const balance = Number(data.balance || 0);
+
+            document.getElementById('dIncome').textContent = '₹ ' + incomeTotal.toFixed(2);
+            document.getElementById('dExpense').textContent = '₹ ' + expenseTotal.toFixed(2);
+            document.getElementById('dBalance').textContent = '₹ ' + balance.toFixed(2);
+
+            // Prepare monthly stacked data from API result.monthly
+            // monthly items look like: { _id: { y, m, type }, amount }
+            const monthly = Array.isArray(data.monthly) ? data.monthly : [];
+            const monthlyMap = new Map(); // key: 'YYYY-MM' -> { income, expense }
+            for (const it of monthly) {
+                const y = it._id?.y, m = it._id?.m, t = it._id?.type;
+                if (!y || !m) continue;
+                const key = `${y}-${String(m).padStart(2, '0')}`;
+                if (!monthlyMap.has(key)) monthlyMap.set(key, { income: 0, expense: 0 });
+                monthlyMap.get(key)[t] = it.amount || 0;
+            }
+            const labels = Array.from(monthlyMap.keys()).sort();
+            const seriesIncome = labels.map(k => monthlyMap.get(k).income || 0);
+            const seriesExpense = labels.map(k => monthlyMap.get(k).expense || 0);
+
+            // Monthly chart
+            const mc = document.getElementById('monthlyChart');
+            new Chart(mc, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Income', data: seriesIncome, backgroundColor: '#22c55e', borderRadius: 6 },
+                        { label: 'Expense', data: seriesExpense, backgroundColor: '#ef4444', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => '₹ ' + v } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+
+            // Pie chart
+            const pc = document.getElementById('pieChart');
+            new Chart(pc, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Income', 'Expense'],
+                    datasets: [{
+                        data: [incomeTotal, expenseTotal],
+                        backgroundColor: ['#22c55e', '#ef4444']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        loadSummary();
+    </script>
+
+    <%- include('partials/footer') %>
