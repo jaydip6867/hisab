@@ -21,4 +21,8 @@ router.get('/dashboard', requireAuth, (_req, res) => {
   res.render('dashboard', { title: 'Dashboard' })
 })
 
+router.get('/drawing', requireAuth, (_req, res) => {
+  res.render('drawing', { title: 'Drawing' })
+})
+
 export default router

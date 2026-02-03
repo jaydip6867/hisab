@@ -1,0 +1,176 @@
+<%- include('partials/header', { title: 'Drawing', active: 'drawing' }) %>
+
+<div class="row g-3 mb-3 filter-bar">
+  <div class="col-md-3">
+    <input id="filterMonth" type="month" class="form-control" />
+  </div>
+  <div class="col-md-3">
+    <select id="filterFirm" class="form-select">
+      <option value="">All Firms</option>
+      <option value="Jaydip">Jaydip</option>
+      <option value="Mishal">Mishal</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select id="filterAccount" class="form-select">
+      <option value="">All Accounts</option>
+      <option value="cash">Cash</option>
+      <option value="bank">Bank</option>
+    </select>
+  </div>
+  <div class="col-md-3 d-flex gap-2">
+    <button class="btn btn-primary-rounded" data-bs-toggle="modal" data-bs-target="#drwModal">Add</button>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3>Drawings</h3>
+    <div class="actions">
+      <div class="text-muted small">Total: <span id="sumTotal">₹ 0.00</span></div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table align-middle" id="drwTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th class="text-end">Amount</th>
+          <th>Firm</th>
+          <th>Account</th>
+          <th style="width: 120px;">Actions</th>
+          <th>Added By</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="drwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="drwForm">
+      <div class="modal-header">
+        <h5 class="modal-title">New Drawing</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Amount</label>
+          <input type="number" class="form-control" id="drwAmount" min="0.01" step="0.01" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control" id="drwDate" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Firm</label>
+          <div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="drwFirm" id="fmJaydip" value="Jaydip" required>
+              <label class="form-check-label" for="fmJaydip">Jaydip</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="drwFirm" id="fmMishal" value="Mishal" required>
+              <label class="form-check-label" for="fmMishal">Mishal</label>
+            </div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Account</label>
+          <div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="drwAccount" id="accCash" value="cash" required>
+              <label class="form-check-label" for="accCash">Cash</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="drwAccount" id="accBank" value="bank" required>
+              <label class="form-check-label" for="accBank">Bank</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const apiDrw = '/api/drawings';
+  const tbody = document.querySelector('#drwTable tbody');
+  const filterMonth = document.getElementById('filterMonth');
+  const filterFirm = document.getElementById('filterFirm');
+  const filterAccount = document.getElementById('filterAccount');
+
+  function getRadio(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+
+  async function fetchDrawings() {
+    const url = new URL(apiDrw, window.location.origin);
+    if (filterMonth.value) url.searchParams.set('month', filterMonth.value);
+    if (filterFirm.value) url.searchParams.set('firm', filterFirm.value);
+    if (filterAccount.value) url.searchParams.set('account', filterAccount.value);
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.items || []);
+
+    tbody.innerHTML = items.map(d => `
+      <tr>
+        <td>${d.date ? new Date(d.date).toLocaleDateString() : ''}</td>
+        <td class="text-end">₹ ${Number(d.amount || 0).toFixed(2)}</td>
+        <td>${d.firm || ''}</td>
+        <td>${d.account || ''}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteDrawing('${d._id}')">Delete</button>
+        </td>
+        <td class="text-muted small">${d.createdBy?.email || d.createdBy?.name || ''}</td>
+      </tr>
+    `).join('');
+
+    // summary total
+    const total = items.reduce((s, x) => s + Number(x.amount || 0), 0);
+    document.getElementById('sumTotal').textContent = '₹ ' + total.toFixed(2);
+  }
+
+  async function deleteDrawing(id) {
+    if (!confirm('Delete this entry?')) return;
+    const res = await fetch(`${apiDrw}/${id}`, { method: 'DELETE' });
+    if (res.ok) fetchDrawings(); else alert('Failed to delete');
+  }
+
+  document.getElementById('drwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      amount: parseFloat(document.getElementById('drwAmount').value),
+      date: document.getElementById('drwDate').value,
+      firm: getRadio('drwFirm'),
+      account: getRadio('drwAccount')
+    };
+    const res = await fetch(apiDrw, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      document.getElementById('drwForm').reset();
+      bootstrap.Modal.getInstance(document.getElementById('drwModal')).hide();
+      fetchDrawings();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert(err.message || 'Validation error');
+    }
+  });
+
+  filterMonth.addEventListener('change', fetchDrawings);
+  filterFirm.addEventListener('change', fetchDrawings);
+  filterAccount.addEventListener('change', fetchDrawings);
+  fetchDrawings();
+</script>
+
+<%- include('partials/footer') %>
