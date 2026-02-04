@@ -1,4 +1,5 @@
 import Transaction from '../models/Transaction.js'
+import Drawing from '../models/Drawing.js'
 
 export async function listTransactions(req, res, next) {
   try {
@@ -68,6 +69,20 @@ export async function deleteTransaction(req, res, next) {
   try {
     const tx = await Transaction.findByIdAndDelete(req.params.id)
     if (!tx) return res.status(404).json({ message: 'Transaction not found' })
+
+    // If this transaction corresponds to a Drawing, delete that Drawing as well
+    try {
+      const note = tx.note || ''
+      if (typeof note === 'string' && note.startsWith('Drawing:')) {
+        const id = note.split(':')[1]
+        if (id && /^[a-fA-F0-9]{24}$/.test(id)) {
+          await Drawing.findByIdAndDelete(id)
+        }
+      }
+    } catch (_e) {
+      // Ignore cascade errors; transaction delete already succeeded
+    }
+
     res.json({ message: 'Deleted' })
   } catch (err) { next(err) }
 }

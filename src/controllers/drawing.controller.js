@@ -39,7 +39,7 @@ export async function createDrawing(req, res, next) {
         type: 'expense',
         amount: payload.amount,
         date: payload.date || new Date(),
-        note: 'Drawing',
+        note: `Drawing:${doc._id}`,
         firm: payload.firm,
         account: payload.account,
         createdBy: payload.createdBy
@@ -56,6 +56,10 @@ export async function deleteDrawing(req, res, next) {
   try {
     const doc = await Drawing.findByIdAndDelete(req.params.id)
     if (!doc) return res.status(404).json({ message: 'Not found' })
+    // Also delete the mirrored transaction created for this drawing
+    try {
+      await Transaction.deleteMany({ note: `Drawing:${doc._id}` })
+    } catch (_e) { /* ignore cascade errors */ }
     res.json({ message: 'Deleted' })
   } catch (err) { next(err) }
 }
